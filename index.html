@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Clock</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4d4be;
+        }
+
+        .container {
+            width: 280px;
+            height: 450px;
+            background-color: #4a3b34;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-display {
+            height: 50%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 4px;
+            width: 100%;
+            background-color: #4fd1c5;
+        }
+
+        #time-left {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4fd1c5;
+        }
+
+        .controls {
+            height: 50%;
+            padding: 20px;
+            color: white;
+        }
+
+        #timer-label {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .time-settings {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .session-time,
+        .break-time {
+            text-align: center;
+        }
+
+        .time-settings p {
+            margin: 0 0 5px;
+            font-size: 12px;
+        }
+
+        .time-control {
+            display: flex;
+            align-items: center;
+        }
+
+        .time-control button {
+            background: none;
+            border: none;
+            color: #4fd1c5;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .time-control span {
+            margin: 0 5px;
+            color: #4fd1c5;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timer-controls button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #start-stop {
+            background-color: #4fd1c5;
+            color: white;
+        }
+
+        #reset {
+            background-color: #718096;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="timer-display">
+            <div class="progress-bar"></div>
+            <div id="time-left">25:00</div>
+        </div>
+        <div class="controls">
+            <h2 id="timer-label">Session 1</h2>
+            <div class="time-settings">
+                <div class="session-time">
+                    <p>session time</p>
+                    <div class="time-control">
+                        <button id="session-decrement">-</button>
+                        <span id="session-length">25 min</span>
+                        <button id="session-increment">+</button>
+                    </div>
+                </div>
+                <div class="break-time">
+                    <p>break time</p>
+                    <div class="time-control">
+                        <button id="break-decrement">-</button>
+                        <span id="break-length">5 min</span>
+                        <button id="break-increment">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="timer-controls">
+                <button id="start-stop">Start</button>
+                <button id="reset">Reset</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        let sessionTime = 25;
+        let breakTime = 5;
+        let timeLeft = sessionTime * 60;
+        let isRunning = false;
+        let isSession = true;
+        let sessionCount = 1;
+        let timerId;
+
+        const timeLeftDisplay = document.getElementById('time-left');
+        const timerLabel = document.getElementById('timer-label');
+        const startStopBtn = document.getElementById('start-stop');
+        const resetBtn = document.getElementById('reset');
+        const sessionLength = document.getElementById('session-length');
+        const breakLength = document.getElementById('break-length');
+        const sessionDecrement = document.getElementById('session-decrement');
+        const sessionIncrement = document.getElementById('session-increment');
+        const breakDecrement = document.getElementById('break-decrement');
+        const breakIncrement = document.getElementById('break-increment');
+        const progressBar = document.querySelector('.progress-bar');
+
+        function formatTime(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timeLeftDisplay.textContent = formatTime(timeLeft);
+            timerLabel.textContent = isSession ? `Session ${sessionCount}` : 'Break!';
+
+            const totalTime = isSession ? sessionTime * 60 : breakTime * 60;
+            const progress = ((totalTime - timeLeft) / totalTime) * 100;
+
+            progressBar.style.width = `${progress}%`;
+            progressBar.style.backgroundColor = isSession ? '#4fd1c5' : '#ed8936';
+            timeLeftDisplay.style.color = isSession ? '#4fd1c5' : '#ed8936';
+        }
+
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(timerId);
+                startStopBtn.textContent = 'Start';
+            } else {
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft < 0) {
+                        clearInterval(timerId);
+                        if (isSession) {
+                            isSession = false;
+                            timeLeft = breakTime * 60;
+                        } else {
+                            isSession = true;
+                            timeLeft = sessionTime * 60;
+                            sessionCount++;
+                        }
+                        toggleTimer();
+                    }
+                    updateDisplay();
+                }, 1000);
+                startStopBtn.textContent = 'Pause';
+            }
+            isRunning = !isRunning;
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            isRunning = false;
+            isSession = true;
+            sessionCount = 1;
+            timeLeft = sessionTime * 60;
+            startStopBtn.textContent = 'Start';
+            updateDisplay();
+        }
+
+        function adjustTime(type, amount) {
+            if (isRunning) return;
+            if (type === 'session') {
+                sessionTime = Math.max(1, Math.min(60, sessionTime + amount));
+                sessionLength.textContent = `${sessionTime} min`;
+                if (isSession) timeLeft = sessionTime * 60;
+            } else {
+                breakTime = Math.max(1, Math.min(60, breakTime + amount));
+                breakLength.textContent = `${breakTime} min`;
+                if (!isSession) timeLeft = breakTime * 60;
+            }
+            updateDisplay();
+        }
+
+        startStopBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        sessionDecrement.addEventListener('click', () => adjustTime('session', -1));
+        sessionIncrement.addEventListener('click', () => adjustTime('session', 1));
+        breakDecrement.addEventListener('click', () => adjustTime('break', -1));
+        breakIncrement.addEventListener('click', () => adjustTime('break', 1));
+
+        updateDisplay();
+    </script>
+</body>
+
+</html>
